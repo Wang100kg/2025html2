@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Canvas 101</title>
+  </head>
+<body>
+  <canvas id="myCanvas" width="1000" height="1000"></canvas>
+  <script language="javascript">
+    var y = -500;
+    var x = -500;
+    var dir = 1;
+    var a = 0;
+    function animate() {
+      if(y > 0 || y < -400)
+        dir = -dir;
+      const canvas = document.getElementById("myCanvas");
+      const ctx = canvas.getContext("2d");
+
+       ctx.font = "80px Arial"; 
+       ctx.textAlign = "center";
+       ctx.fillStyle = "#743A3A";  
+       ctx.fillText("花蓮", 100, 100); 
+
+    
+       ctx.strokeStyle = "#AE57A4"; 
+       ctx.lineWidth = 2;
+       ctx.strokeText("吉安", 400, 100); 
+
+
+      //ctx.arc(500, 500, 100, 0, Math.PI * 2);
+
+      //ctx.fillStyle = "#4F9D9D";
+      //ctx.fillRect(50, 50, 100, 80);
+
+      //ctx.strokeStyle = "#00E3E3";
+      //ctx.lineWidth = 10;
+      //ctx.strokeRect(250, 50, 100, 80);
+      
+      
+      //ctx.clearRect(0, 0, 1000, 1000);
+      //ctx.beginPath();         
+      //ctx.moveTo(500 + x, 400 + y);
+      //ctx.lineTo(441 + x, 581 + y);
+      //ctx.lineTo(595 + x, 469 + y);
+      //ctx.lineTo(405 + x, 469 + y);
+      //ctx.lineTo(558 + x, 581 + y);
+      //ctx.lineTo(500 + x, 400 + y);
+      
+      //ctx.rotate(Math.PI / 180 * a);
+      //ctx.fill(); 
+
+      //y = y + dir;
+      //a = a + 1 % 360;
+      requestAnimationFrame(animate);
+    }
+
+    
+    animate();
+  </script>
+</body>
+</html>

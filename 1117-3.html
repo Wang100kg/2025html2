@@ -1,0 +1,67 @@
+<svg width="520" height="170" viewBox="0 0 520 170">
+  <!-- 背景 -->
+  <rect width="520" height="170" rx="16" fill="#1A1F25" />
+
+  <!-- ==== 左邊：白天卡片 ==== -->
+  <g transform="translate(15, 10)">
+    <defs>
+      <linearGradient id="sky-day" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#4CA9FF"/>
+        <stop offset="100%" stop-color="#007BFF"/>
+      </linearGradient>
+    </defs>
+
+    <rect width="240" height="150" rx="16" fill="url(#sky-day)" />
+
+    <!-- 太陽 -->
+    <g transform="translate(60, 60)">
+      <circle cx="0" cy="0" r="22" fill="#FFD95A" />
+      <g stroke="#FFD95A" stroke-width="3" stroke-linecap="round">
+        <line x1="0" y1="-32" x2="0" y2="-24" />
+        <line x1="0" y1="32" x2="0" y2="24" />
+        <line x1="-32" y1="0" x2="-24" y2="0" />
+        <line x1="32" y1="0" x2="24" y2="0" />
+        <line x1="23" y1="23" x2="17" y2="17" />
+        <line x1="-23" y1="23" x2="-17" y2="17" />
+        <line x1="23" y1="-23" x2="17" y2="-17" />
+        <line x1="-23" y1="-23" x2="-17" y2="-17" />
+      </g>
+    </g>
+
+    <text x="170" y="80" text-anchor="middle" fill="#FFFFFF"
+      font-size="50" font-weight="600" style="font-family:sans-serif;">
+      28°C
+    </text>
+
+    <text x="120" y="130" text-anchor="middle" fill="#E6ECF0"
+      font-size="20" style="font-family:sans-serif;">
+      台北
+    </text>
+  </g>
+
+  <!-- ==== 右邊：夜間卡片 ==== -->
+  <g transform="translate(265, 10)">
+    <rect width="240" height="150" rx="16" fill="#1E2A38" />
+
+    <!-- 月亮 -->
+    <g transform="translate(70, 55)">
+      <circle cx="0" cy="0" r="22" fill="#F2F5F7" />
+      <circle cx="7" cy="-3" r="22" fill="#1E2A38" />
+    </g>
+
+    <!-- 點綴星星 -->
+    <circle cx="35" cy="30" r="2" fill="#F2F5F7" opacity="0.8" />
+    <circle cx="105" cy="20" r="1.5" fill="#F2F5F7" opacity="0.7" />
+    <circle cx="55" cy="90" r="1.8" fill="#F2F5F7" opacity="0.6" />
+
+    <text x="170" y="80" text-anchor="middle" fill="#FFFFFF"
+      font-size="50" font-weight="600" style="font-family:sans-serif;">
+      20°C
+    </text>
+
+    <text x="120" y="130" text-anchor="middle" fill="#7FC3FF"
+      font-size="20" style="font-family:sans-serif;">
+      台北
+    </text>
+  </g>
+</svg>

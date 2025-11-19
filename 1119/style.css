@@ -1,0 +1,35 @@
+/* 簡單重置與變數 */
+:root {
+    --primary: #4285f4;
+    --bg: #f0f2f5;
+    --chat-bg: #ffffff;
+    --user-msg-bg: #e3f2fd;
+}
+
+body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; height: 100vh; }
+.container { width: 100%; max-width: 600px; background: var(--chat-bg); display: flex; flex-direction: column; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+header { padding: 15px; border-bottom: 1px solid #ddd; text-align: center; background: #fff; }
+header h1 { margin: 0; font-size: 1.2rem; color: #333; }
+
+/* 聊天區塊 */
+.chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+.message { max-width: 80%; padding: 10px 15px; border-radius: 15px; line-height: 1.5; word-wrap: break-word; }
+.ai-message { align-self: flex-start; background: #f1f1f1; color: #333; border-bottom-left-radius: 2px; }
+.user-message { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 2px; }
+
+/* 輸入區塊 */
+.input-area { padding: 15px; border-top: 1px solid #ddd; background: #fff; }
+.controls { display: flex; gap: 10px; align-items: center; }
+#user-input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; outline: none; }
+#send-btn { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 25px; cursor: pointer; }
+#send-btn:disabled { background: #ccc; }
+.icon-btn { cursor: pointer; font-size: 1.5rem; padding: 5px; }
+
+/* 圖片預覽 */
+.preview-container { position: relative; width: 80px; margin-bottom: 10px; }
+#image-preview { width: 100%; border-radius: 8px; border: 1px solid #ddd; }
+#remove-image { position: absolute; top: -5px; right: -5px; background: red; color: white; border: none; border-radius: 50%; cursor: pointer; width: 20px; height: 20px; font-size: 12px; }
+
+/* Markdown 樣式修正 */
+.message pre { background: #2d2d2d; color: #fff; padding: 10px; border-radius: 5px; overflow-x: auto; }
+.message code { font-family: monospace; }

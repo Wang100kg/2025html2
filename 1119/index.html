@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini AI 網頁助理</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1> Gemini AI 助理</h1>
+            <p>輸入文字或上傳圖片與 AI 互動</p>
+        </header>
+
+        <div id="chat-history" class="chat-box">
+            <div class="message ai-message">你好！我是你的 AI 助理，有什麼我可以幫你的嗎？</div>
+        </div>
+
+        <div class="input-area">
+            <div class="preview-container" id="image-preview-container" style="display: none;">
+                <img id="image-preview" src="" alt="預覽圖">
+                <button id="remove-image">❌</button>
+            </div>
+            
+            <div class="controls">
+                <label for="image-input" class="icon-btn">📷</label>
+                <input type="file" id="image-input" accept="image/*" hidden>
+                
+                <input type="text" id="user-input" placeholder="輸入訊息..." autocomplete="off">
+                <button id="send-btn">發送</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>

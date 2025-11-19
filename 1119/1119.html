@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣地震資訊查詢系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-all { background: #6c757d; color: white; }
+        .btn-major { background: #dc3545; color: white; }
+        .btn-moderate { background: #fd7e14; color: white; }
+        .btn-minor { background: #28a745; color: white; }
+        .btn-refresh { background: #667eea; color: white; margin-left: auto; }
+
+        .btn.active {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .content {
+            padding: 30px;
+            min-height: 400px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .earthquake-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .earthquake-card {
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .earthquake-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .magnitude-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: white;
+        }
+
+        .mag-high { background: #dc3545; }
+        .mag-med { background: #fd7e14; }
+        .mag-low { background: #ffc107; }
+        .mag-min { background: #28a745; }
+
+        .significant-badge {
+            background: #ffe5e5;
+            color: #dc3545;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #495057;
+            font-size: 0.95rem;
+        }
+
+        .info-row.location {
+            font-weight: 600;
+            color: #212529;
+            font-size: 1rem;
+        }
+
+        .intensity-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .intensity-high { background: #dc3545; }
+        .intensity-med { background: #fd7e14; }
+        .intensity-low { background: #ffc107; }
+        .intensity-min { background: #28a745; }
+
+        .report-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        .report-link:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            border-top: 1px solid #dee2e6;
+            font-size: 0.85rem;
+            color: #6c757d;
+            text-align: center;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .controls {
+                padding: 15px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span>📊</span>
+                台灣地震資訊查詢系統
+            </h1>
+            <p>即時地震資訊 - 中央氣象署提供</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-all active" onclick="setFilter('all', this)">全部地震</button>
+            <button class="btn btn-major" onclick="setFilter('major', this)">規模 ≥ 5.0</button>
+            <button class="btn btn-moderate" onclick="setFilter('moderate', this)">規模 4.0-4.9</button>
+            <button class="btn btn-minor" onclick="setFilter('minor', this)">規模 < 4.0</button>
+            <button class="btn btn-refresh" onclick="fetchData()">🔄 重新整理</button>
+        </div>
+
+        <div class="content" id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>載入中...</p>
+            </div>
+        </div>
+        
+        <div style="padding: 20px; background: #f8f9fa; border-top: 1px solid #dee2e6;">
+            <h3 style="margin-bottom: 10px;">除錯資訊（請複製給開發者）：</h3>
+            <textarea id="debugInfo" readonly style="width: 100%; height: 150px; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;"></textarea>
+        </div>
+
+        <div class="footer">
+            資料來源：中央氣象署開放資料平台 | 最後更新：<span id="updateTime"></span>
+        </div>
+    </div>
+
+    <script>
+        let earthquakes = [];
+        let currentFilter = 'all';
+
+        // 🚨 安全警告：API Key 不應暴露在前端。這裡僅為功能演示。
+        const CWA_API_URL = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0015-001?Authorization=CWA-5C84C12D-C005-48EC-AEE8-F0520A237833';
+
+        async function fetchData() {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>載入中...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(CWA_API_URL);
+                const data = await response.json();
+
+                // 顯示在除錯區域
+                document.getElementById('debugInfo').value = JSON.stringify(data, null, 2);
+
+                if (data.success && data.records && data.records.Earthquake) {
+                    // CWA E-A0015-001 的地震資料正確路徑
+                    earthquakes = data.records.Earthquake;
+                    
+                    // 確保初始狀態下 'all' 按鈕被激活
+                    document.querySelector('.btn-all').classList.add('active');
+
+                    displayEarthquakes();
+                    updateTime();
+                } else {
+                    showError('無法取得地震資料或資料結構錯誤，請檢查 API Key 或除錯資訊。');
+                }
+            } catch (error) {
+                showError('載入資料時發生錯誤：' + error.message);
+            }
+        }
+
+        function displayEarthquakes() {
+            const content = document.getElementById('content');
+            
+            const filtered = earthquakes.filter(eq => {
+                // 使用正確的規模路徑進行過濾
+                const mag = parseFloat(eq.EarthquakeInfo?.EarthquakeMagnitude?.MagnitudeValue || 0);
+                
+                if (currentFilter === 'all') return true;
+                if (currentFilter === 'major') return mag >= 5.0;
+                if (currentFilter === 'moderate') return mag >= 4.0 && mag < 5.0;
+                if (currentFilter === 'minor') return mag < 4.0;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                content.innerHTML = '<div class="no-data">目前沒有符合條件的地震資料</div>';
+                return;
+            }
+
+            const html = filtered.map(eq => {
+                // 🎯 核心資料解析 (使用正確的巢狀路徑)
+                const magValue = eq.EarthquakeInfo?.EarthquakeMagnitude?.MagnitudeValue || 'N/A';
+                const location = eq.EarthquakeInfo?.Epicenter?.Location || 'N/A';
+                const depth = eq.EarthquakeInfo?.FocalDepth || 'N/A';
+                const time = eq.EarthquakeInfo?.OriginTime || 'N/A';
+                const reportImage = eq.ReportImageURI;
+                
+                // --- 修正 最大震度解析邏輯 (找出最高震度) ---
+                let maxIntensity = 'N/A';
+                const shakingAreas = eq.Intensity?.ShakingArea || [];
+
+                if (shakingAreas.length > 0) {
+                    let highestIntensityString = '0'; 
+
+                    // 輔助函數：將震度字串轉換為可比較的數字 (5- -> 5.0, 5+ -> 5.5)
+                    const toNumeric = (level) => {
+                        if (level === '5-') return 5.0;
+                        if (level === '5+') return 5.5;
+                        if (level === '6-') return 6.0;
+                        if (level === '6+') return 6.5;
+                        return parseFloat(level) || 0;
+                    };
+
+                    shakingAreas.forEach(area => {
+                        const current = area.AreaIntensity;
+                        if (toNumeric(current) > toNumeric(highestIntensityString)) {
+                            highestIntensityString = current;
+                        }
+                    });
+                    maxIntensity = highestIntensityString;
+                }
+                // ----------------------------------
+
+                // 判斷是否為「顯著有感」：使用規模或最大震度作為判斷依據
+                const isSignificant = parseFloat(magValue) >= 4.5 || getIntensityLevel(maxIntensity) >= 4; 
+                
+                const magClass = getMagnitudeClass(magValue);
+                const intensityClass = getIntensityClass(maxIntensity); 
+
+                // 時間格式化，移除 T 和毫秒部分
+                const formattedTime = time.replace('T', ' ').substring(0, 19);
+
+                return `
+                    <div class="earthquake-card">
+                        <div class="card-header">
+                            <span class="magnitude-badge ${magClass}">規模 ${magValue}</span>
+                            ${isSignificant ? '<span class="significant-badge">顯著有感</span>' : ''}
+                        </div>
+                        <div class="card-body">
+                            <div class="info-row location">
+                                📍 ${location}
+                            </div>
+                            <div class="info-row">
+                                📅 ${formattedTime}
+                            </div>
+                            <div class="info-row">
+                                🌊 深度: ${depth} 公里
+                                <span class="intensity-badge ${intensityClass}">最大震度 ${maxIntensity}</span>
+                            </div>
+                            ${reportImage ? `<a href="${reportImage}" target="_blank" class="report-link">🖼️ 查看報告圖</a>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            content.innerHTML = `<div class="earthquake-list">${html}</div>`;
+        }
+
+        function getMagnitudeClass(magnitude) {
+            const mag = parseFloat(magnitude);
+            if (mag >= 6) return 'mag-high';
+            if (mag >= 5) return 'mag-med';
+            if (mag >= 4) return 'mag-low';
+            return 'mag-min';
+        }
+
+        // 輔助函數：將震度字串轉換為可比較的數字
+        function getIntensityLevel(intensity) {
+            if (!intensity || intensity === 'N/A') return 0;
+            if (intensity === '7') return 7;
+            if (intensity === '6+') return 6.5;
+            if (intensity === '6-') return 6.0;
+            if (intensity === '5+') return 5.5;
+            if (intensity === '5-') return 5.0;
+            return parseInt(intensity) || 0;
+        }
+
+        function getIntensityClass(intensity) {
+            const level = getIntensityLevel(intensity);
+            
+            if (level >= 5) return 'intensity-high';
+            if (level >= 4) return 'intensity-med';
+            if (level >= 3) return 'intensity-low';
+            return 'intensity-min';
+        }
+
+        function setFilter(filter, buttonElement) {
+            currentFilter = filter;
+            
+            document.querySelectorAll('.controls .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 使用傳入的按鈕元素激活 active 樣式
+            buttonElement.classList.add('active');
+            
+            displayEarthquakes();
+        }
+
+        function showError(message) {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="error">
+                    <strong>發生錯誤</strong><br>
+                    ${message}
+                </div>
+            `;
+        }
+
+        function updateTime() {
+            document.getElementById('updateTime').textContent = new Date().toLocaleString('zh-TW');
+        }
+
+        // 初始化載入資料
+        fetchData();
+    </script>
+</body>
+</html>

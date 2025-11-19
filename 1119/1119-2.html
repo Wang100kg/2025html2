@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣地震 AI 智能助手</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+
+        .panel {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.85rem;
+        }
+
+        /* 地震面板樣式 */
+        .controls {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-all { background: #6c757d; color: white; }
+        .btn-major { background: #dc3545; color: white; }
+        .btn-moderate { background: #fd7e14; color: white; }
+        .btn-minor { background: #28a745; color: white; }
+        .btn-refresh { background: #667eea; color: white; margin-left: auto; }
+
+        .btn.active {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .earthquake-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .earthquake-card {
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .earthquake-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .magnitude-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: white;
+        }
+
+        .mag-high { background: #dc3545; }
+        .mag-med { background: #fd7e14; }
+        .mag-low { background: #ffc107; }
+        .mag-min { background: #28a745; }
+
+        /* AI 聊天面板樣式 */
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 85%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+        }
+
+        .ai-message {
+            background: white;
+            border: 1px solid #dee2e6;
+            margin-right: auto;
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .image-preview-container {
+            display: none;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .image-preview-container img {
+            max-width: 150px;
+            max-height: 150px;
+            border-radius: 8px;
+        }
+
+        .remove-image {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            resize: none;
+        }
+
+        #send-btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        #send-btn:hover {
+            background: #5568d3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .panel {
+                height: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左側：地震資訊面板 -->
+        <div class="panel">
+            <div class="header">
+                <h1>📊 台灣地震資訊</h1>
+                <p>即時地震資訊 - 中央氣象署提供</p>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-all active" onclick="setFilter('all', this)">全部地震</button>
+                <button class="btn btn-major" onclick="setFilter('major', this)">規模 ≥ 5.0</button>
+                <button class="btn btn-moderate" onclick="setFilter('moderate', this)">規模 4.0-4.9</button>
+                <button class="btn btn-minor" onclick="setFilter('minor', this)">規模 < 4.0</button>
+                <button class="btn btn-refresh" onclick="fetchEarthquakeData()">🔄 重新整理</button>
+            </div>
+
+            <div class="earthquake-content" id="earthquake-content">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>載入地震資料中...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：AI 聊天面板 -->
+        <div class="panel">
+            <div class="header">
+                <h1> AI 地震智能助手</h1>
+                <p>使用 Google Gemini - 可分析地震資料與圖片</p>
+            </div>
+
+            <div class="chat-history" id="chat-history">
+                <div class="message ai-message">
+                    您好！我是地震 AI 助手。我可以幫您：<br>
+                    • 分析最新的地震資料<br>
+                    • 回答地震相關問題<br>
+                    • 分析上傳的圖片<br>
+                    請隨時提問！
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="image-preview-container" id="image-preview-container">
+                    <img id="image-preview" src="" alt="預覽">
+                    <button class="remove-image" id="remove-image">×</button>
+                </div>
+                <div class="input-row">
+                    <input type="file" id="image-input" accept="image/*" style="display: none">
+                    <button class="btn" onclick="document.getElementById('image-input').click()" style="background: #28a745; color: white;">📷</button>
+                    <textarea id="user-input" rows="1" placeholder="輸入訊息..."></textarea>
+                    <button id="send-btn">發送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
+        // API 設定
+        const API_KEY = "AIzaSyDyWp8XiVo8pfL1hMU5dGv4SYMiesI1hL0";
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-flash-latest"
+        });
+
+        const CWA_API_URL = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0015-001?Authorization=CWA-5C84C12D-C005-48EC-AEE8-F0520A237833';
+
+        // 全域變數
+        window.earthquakes = [];
+        window.currentFilter = 'all';
+        let currentImageFile = null;
+
+        // DOM 元素
+        const chatHistory = document.getElementById('chat-history');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const imageInput = document.getElementById('image-input');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const removeImageBtn = document.getElementById('remove-image');
+
+        // === 地震資料處理 ===
+        async function fetchEarthquakeData() {
+            const content = document.getElementById('earthquake-content');
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>載入地震資料中...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(CWA_API_URL);
+                const data = await response.json();
+
+                if (data.success && data.records && data.records.Earthquake) {
+                    window.earthquakes = data.records.Earthquake;
+                    displayEarthquakes();
+                } else {
+                    content.innerHTML = '<div style="padding: 20px; text-align: center; color: #dc3545;">無法取得地震資料</div>';
+                }
+            } catch (error) {
+                content.innerHTML = `<div style="padding: 20px; text-align: center; color: #dc3545;">載入失敗: ${error.message}</div>`;
+            }
+        }
+
+        function displayEarthquakes() {
+            const content = document.getElementById('earthquake-content');
+            
+            const filtered = window.earthquakes.filter(eq => {
+                const mag = parseFloat(eq.EarthquakeInfo?.EarthquakeMagnitude?.MagnitudeValue || 0);
+                
+                if (window.currentFilter === 'all') return true;
+                if (window.currentFilter === 'major') return mag >= 5.0;
+                if (window.currentFilter === 'moderate') return mag >= 4.0 && mag < 5.0;
+                if (window.currentFilter === 'minor') return mag < 4.0;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                content.innerHTML = '<div style="padding: 40px; text-align: center;">目前沒有符合條件的地震資料</div>';
+                return;
+            }
+
+            const html = filtered.map(eq => {
+                const magValue = eq.EarthquakeInfo?.EarthquakeMagnitude?.MagnitudeValue || 'N/A';
+                const location = eq.EarthquakeInfo?.Epicenter?.Location || 'N/A';
+                const depth = eq.EarthquakeInfo?.FocalDepth || 'N/A';
+                const time = eq.EarthquakeInfo?.OriginTime || 'N/A';
+                const formattedTime = time.replace('T', ' ').substring(0, 19);
+                const magClass = getMagnitudeClass(magValue);
+
+                return `
+                    <div class="earthquake-card">
+                        <div style="margin-bottom: 10px;">
+                            <span class="magnitude-badge ${magClass}">規模 ${magValue}</span>
+                        </div>
+                        <div style="font-weight: 600; margin-bottom: 8px;">📍 ${location}</div>
+                        <div style="font-size: 0.9rem; color: #6c757d;">
+                            📅 ${formattedTime}<br>
+                            🌊 深度: ${depth} 公里
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            content.innerHTML = html;
+        }
+
+        function getMagnitudeClass(magnitude) {
+            const mag = parseFloat(magnitude);
+            if (mag >= 6) return 'mag-high';
+            if (mag >= 5) return 'mag-med';
+            if (mag >= 4) return 'mag-low';
+            return 'mag-min';
+        }
+
+        window.setFilter = function(filter, buttonElement) {
+            window.currentFilter = filter;
+            document.querySelectorAll('.controls .btn').forEach(btn => btn.classList.remove('active'));
+            buttonElement.classList.add('active');
+            displayEarthquakes();
+        };
+
+        window.fetchEarthquakeData = fetchEarthquakeData;
+
+        // === AI 聊天處理 ===
+        async function fileToGenerativePart(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64Data = reader.result.split(',')[1];
+                    resolve({
+                        inlineData: {
+                            data: base64Data,
+                            mimeType: file.type
+                        }
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleSend() {
+            const text = userInput.value.trim();
+            if (!text && !currentImageFile) return;
+
+            appendMessage(text, 'user-message', currentImageFile);
+            userInput.value = '';
+            clearImageSelection();
+            sendBtn.disabled = true;
+
+            const aiMessageDiv = appendMessage('...', 'ai-message');
+            let fullResponse = "";
+
+            try {
+                // 建立包含地震資料的系統提示
+                const earthquakeContext = window.earthquakes.slice(0, 5).map((eq, i) => {
+                    const mag = eq.EarthquakeInfo?.EarthquakeMagnitude?.MagnitudeValue;
+                    const loc = eq.EarthquakeInfo?.Epicenter?.Location;
+                    const time = eq.EarthquakeInfo?.OriginTime;
+                    return `${i+1}. 規模${mag} - ${loc} (${time})`;
+                }).join('\n');
+
+                const systemPrompt = `你是一個台灣地震資訊 AI 助手。以下是最新的5筆地震資料：\n${earthquakeContext}\n\n請根據這些資料回答使用者的問題。`;
+
+                let result;
+                
+                if (currentImageFile) {
+                    const imagePart = await fileToGenerativePart(currentImageFile);
+                    const prompt = `${systemPrompt}\n\n使用者問題: ${text || "請描述這張圖片"}`;
+                    result = await model.generateContentStream([prompt, imagePart]);
+                } else {
+                    const prompt = `${systemPrompt}\n\n使用者問題: ${text}`;
+                    result = await model.generateContentStream(prompt);
+                }
+
+                for await (const chunk of result.stream) {
+                    const chunkText = chunk.text();
+                    fullResponse += chunkText;
+                    aiMessageDiv.innerHTML = marked.parse(fullResponse);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                }
+
+            } catch (error) {
+                console.error(error);
+                aiMessageDiv.innerHTML = `<span style="color:red">發生錯誤: ${error.message}</span>`;
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+
+        function appendMessage(content, className, imageFile = null) {
+            const div = document.createElement('div');
+            div.className = `message ${className}`;
+            
+            if (imageFile) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(imageFile);
+                img.style.maxWidth = "100%";
+                img.style.borderRadius = "8px";
+                img.style.marginBottom = "5px";
+                div.appendChild(img);
+            }
+            
+            if (content) {
+                div.innerHTML += (className === 'ai-message') ? marked.parse(content) : content;
+            }
+            
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            return div;
+        }
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                currentImageFile = file;
+                imagePreview.src = URL.createObjectURL(file);
+                imagePreviewContainer.style.display = 'block';
+            }
+        });
+
+        function clearImageSelection() {
+            currentImageFile = null;
+            imageInput.value = '';
+            imagePreviewContainer.style.display = 'none';
+        }
+
+        removeImageBtn.addEventListener('click', clearImageSelection);
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
+
+        // 初始化
+        fetchEarthquakeData();
+    </script>
+</body>
+</html>

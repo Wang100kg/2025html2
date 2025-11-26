@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣天氣與地震整合查詢</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+           background: #84C1FF;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: fadeIn 0.6s;
+        }
+        .header h1 {
+            font-size: 3em;
+            font-weight: 900;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .search-container { 
+            max-width: 600px; 
+            margin: 0 auto 40px;
+            animation: fadeIn 0.8s;
+        }
+        .search-box {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            padding: 8px;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        .search-box:focus-within {
+            border-color: #60a5fa;
+            box-shadow: 0 15px 50px rgba(96, 165, 250, 0.4);
+        }
+        .search-input {
+            width: 100%;
+            padding: 18px 60px 18px 25px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 15px;
+            background: white;
+            font-weight: 500;
+            color: #1f2937;
+        }
+        .search-input::placeholder {
+            color: #9ca3af;
+        }
+        .search-input:focus { outline: none; }
+        .search-icon {
+            position: absolute;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5em;
+            opacity: 0.5;
+        }
+        .dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 999;
+            display: none;
+        }
+        .dropdown.show { display: block; }
+        .dropdown-item {
+            padding: 16px 25px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .dropdown-item:hover {
+            background: #2563eb;
+            color: white;
+            padding-left: 35px;
+        }
+        
+        .weather-display { display: none; }
+        .weather-display.show { display: block; animation: fadeIn 0.6s; }
+        
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(-5px);
+        }
+        
+        .location-header {
+            color: white;
+            font-size: 2.5em;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .day-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .day-btn {
+            padding: 15px 35px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .day-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-3px);
+        }
+        .day-btn.active {
+            background: white;
+            color: #1e40af;
+            border-color: white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .weather-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .weather-card {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border: 3px solid rgba(147, 197, 253, 0.6);
+            border-radius: 25px;
+            padding: 35px;
+            color: white;
+            box-shadow: 0 15px 50px rgba(29, 78, 216, 0.5);
+            transition: all 0.3s;
+        }
+        .weather-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(29, 78, 216, 0.6);
+            border-color: rgba(191, 219, 254, 0.8);
+        }
+        
+        .period-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        .period-title {
+            font-size: 1.4em;
+            font-weight: 700;
+        }
+        .period-time {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .weather-icon-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .weather-icon {
+            font-size: 8em;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
+        }
+        .weather-desc {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        .temp-section {
+            text-align: center;
+            margin: 25px 0;
+        }
+        .temperature {
+            font-size: 4em;
+            font-weight: 900;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .temp-label {
+            font-size: 1.1em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 25px;
+        }
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 1.05em;
+        }
+        .detail-icon {
+            font-size: 1.5em;
+        }
+        .detail-value {
+            font-weight: 700;
+        }
+        
+        .earthquake-section {
+            margin-top: 40px;
+        }
+        .section-title {
+            color: white;
+            font-size: 2.2em;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .earthquake-card {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border: 3px solid rgba(147, 197, 253, 0.6);
+            border-radius: 25px;
+            padding: 30px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        .earthquake-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(29, 78, 216, 0.5);
+            border-color: rgba(191, 219, 254, 0.8);
+        }
+        
+        .eq-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .eq-magnitude {
+            font-size: 3em;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .eq-magnitude.high { color: #fca5a5; }
+        .eq-magnitude.medium { color: #fcd34d; }
+        .eq-time {
+            font-size: 1.1em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .eq-location {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .eq-images {
+            margin: 20px 0;
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .eq-images.show {
+            display: grid;
+        }
+        
+        .eq-toggle-btn {
+            display: inline-block;
+            margin: 15px 0;
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .eq-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .eq-image-container {
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .eq-image-container:hover {
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .eq-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .eq-image-label {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            text-align: center;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        .eq-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.05em;
+        }
+        
+        .no-earthquake {
+            background: rgba(34, 197, 94, 0.3);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(74, 222, 128, 0.5);
+            border-radius: 25px;
+            padding: 50px;
+            text-align: center;
+            color: #d1fae5;
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+        
+        .day-content { display: none; }
+        .day-content.active { display: block; }
+        
+        .home-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            animation: fadeIn 1s;
+        }
+        
+        .quick-cities {
+            margin-bottom: 50px;
+        }
+        
+        .city-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .city-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%);
+            backdrop-filter: blur(10px);
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            color: white;
+            font-size: 1.4em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .city-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .city-card:hover::before {
+            opacity: 1;
+        }
+        
+        .city-card:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.3) 100%);
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .city-emoji {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            display: block;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+        }
+        
+        .recent-earthquakes {
+            margin-bottom: 40px;
+        }
+        
+        .earthquake-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+        }
+        
+        .home-eq-card {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border: 3px solid rgba(147, 197, 253, 0.6);
+            border-radius: 20px;
+            padding: 25px;
+            color: white;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .home-eq-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(29, 78, 216, 0.5);
+            border-color: rgba(191, 219, 254, 0.8);
+        }
+        
+        .home-eq-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .home-eq-mag {
+            font-size: 2.5em;
+            font-weight: 900;
+        }
+        
+        .home-eq-mag.high { color: #fca5a5; }
+        .home-eq-mag.medium { color: #fcd34d; }
+        
+        .home-eq-time {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+        
+        .home-eq-location {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .home-eq-image {
+            margin: 15px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: none;
+        }
+        
+        .home-eq-image.show {
+            display: block;
+        }
+        
+        .home-eq-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .home-eq-toggle-btn {
+            display: inline-block;
+            margin: 10px 0;
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .home-eq-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .home-eq-details {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2em; }
+            .location-header { font-size: 2em; }
+            .weather-cards { grid-template-columns: 1fr; }
+            .weather-icon { font-size: 6em; }
+            .temperature { font-size: 3em; }
+            .eq-magnitude { font-size: 2.2em; }
+            .city-grid { 
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            .city-card {
+                padding: 30px 15px;
+                font-size: 1.2em;
+            }
+            .city-emoji {
+                font-size: 2em;
+            }
+            .earthquake-list {
+                grid-template-columns: 1fr;
+            }
+        }
+         /* 最新消息區塊 */
+.city-news {
+    background: #E0E0E0;
+    padding: 18px;
+    margin: 18px auto 32px;
+    border-radius: 16px;
+    color: #000000;
+    font-size: 1.05em;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.35);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    max-width: 900px;
+}
+.city-news h3 {
+    margin-bottom: 12px;
+    font-size: 1.25em;
+    font-weight: 800;
+}
+.city-news a {
+    color: #fff900;
+    text-decoration: none;
+}
+.city-news a:hover {
+    text-decoration: underline;
+}
+
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌤️ 台灣天氣與地震查詢</h1>
+            <div class="subtitle">中央氣象署即時資料</div>
+        </div>
+        
+        <div id="searchSection">
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" class="search-input" id="searchInput" placeholder="搜尋縣市..." autocomplete="off">
+                    <span class="search-icon">🔍</span>
+                    <div class="dropdown" id="dropdown"></div>
+                </div>
+            </div>
+            
+            <div class="home-content">
+                <div class="quick-cities">
+                    <h2 class="section-title">🌟 熱門城市</h2>
+                    <div class="city-grid" id="cityGrid"></div>
+                </div>
+                
+                <div class="recent-earthquakes">
+                    <h2 class="section-title">🌏 最近地震</h2>
+                    <div class="earthquake-list" id="homeEarthquakeList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="weatherSection" class="weather-display"></div>
+    </div>
+
+    <script>
+        const WEATHER_API = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-089?Authorization=CWA-5C84C12D-C005-48EC-AEE8-F0520A237833';
+        const EARTHQUAKE_API = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0015-001?Authorization=CWA-5C84C12D-C005-48EC-AEE8-F0520A237833';
+        
+        let weatherData = null;
+        let earthquakeData = null;
+        let allLocations = [];
+
+        const searchInput = document.getElementById('searchInput');
+        const dropdown = document.getElementById('dropdown');
+        const weatherSection = document.getElementById('weatherSection');
+
+        async function fetchAllData() {
+            try {
+                const [weatherRes, earthquakeRes] = await Promise.all([
+                    fetch(WEATHER_API),
+                    fetch(EARTHQUAKE_API)
+                ]);
+                
+                weatherData = await weatherRes.json();
+                earthquakeData = await earthquakeRes.json();
+                
+                allLocations = weatherData.records.Locations[0].Location;
+                populateDropdown(allLocations);
+                displayHomePage();
+            } catch (error) {
+                alert('載入失敗: ' + error.message);
+            }
+        }
+
+        function populateDropdown(locations) {
+            dropdown.innerHTML = '';
+            locations.forEach(loc => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.innerHTML = `${getCityIcon(loc.LocationName)} ${loc.LocationName}`;
+                item.onclick = () => selectLocation(loc);
+                dropdown.appendChild(item);
+            });
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
+            const filtered = term === '' ? allLocations : allLocations.filter(loc => loc.LocationName.toLowerCase().includes(term));
+            populateDropdown(filtered);
+            dropdown.classList.add('show');
+        });
+
+        searchInput.addEventListener('focus', () => {
+            if (allLocations.length > 0) { populateDropdown(allLocations); dropdown.classList.add('show'); }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-box')) dropdown.classList.remove('show');
+        });
+
+        function selectLocation(location) {
+            dropdown.classList.remove('show');
+            searchInput.value = location.LocationName;
+            document.querySelector('.home-content').style.display = 'none';
+            displayWeatherAndEarthquake(location);
+        }
+
+        function getWeatherEmoji(desc) {
+            if (!desc || desc === '-') return '☁️';
+            if (desc.includes('晴')) return '☀️';
+            if (desc.includes('多雲')) return '⛅';
+            if (desc.includes('陰')) return '☁️';
+            if (desc.includes('雨')) return '🌧️';
+            if (desc.includes('雷')) return '⛈️';
+            return '☁️';
+        }
+
+        function getVal(el, idx, key) {
+            try { return el?.Time[idx]?.ElementValue[0]?.[key] || '-'; } catch { return '-'; }
+        }
+
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            const days = ['日', '一', '二', '三', '四', '五', '六'];
+            return `${d.getMonth()+1}/${d.getDate()} (${days[d.getDay()]})`;
+        }
+
+        function getDayLabel(dayIdx) {
+            if (dayIdx === 0) return '今天';
+            if (dayIdx === 1) return '明天';
+            return '後天';
+        }
+
+        function switchDay(dayIdx) {
+            document.querySelectorAll('.day-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === dayIdx);
+            });
+            document.querySelectorAll('.day-content').forEach((content, i) => {
+                content.classList.toggle('active', i === dayIdx);
+            });
+        }
+
+        function findEarthquakesForLocation(locationName) {
+            if (!earthquakeData || !earthquakeData.records || !earthquakeData.records.Earthquake) {
+                return [];
+            }
+            const earthquakes = earthquakeData.records.Earthquake;
+            const matched = earthquakes.filter(eq => {
+                const location = eq.EarthquakeInfo?.Epicenter?.Location || '';
+                return location.includes(locationName.replace('縣', '').replace('市', ''));
+            });
+            return matched.slice(0, 3);
+        }
+
+        function displayEarthquakeSection(locationName) {
+            const earthquakes = findEarthquakesForLocation(locationName);
+
+            if (earthquakes.length === 0) {
+                return `
+                    <div class="earthquake-section">
+                        <div class="section-title">🌏 最近地震記錄</div>
+                        <div class="no-earthquake">✅ ${locationName}最近沒有地震記錄</div>
+                    </div>
+                `;
+            }
+
+            let html = `<div class="earthquake-section"><div class="section-title">🌏 最近地震記錄</div>`;
+            earthquakes.forEach((eq, index) => {
+                const magnitude = parseFloat(eq.EarthquakeInfo?.EarthquakeMagnitude?.MagnitudeValue || 0);
+                const location = eq.EarthquakeInfo?.Epicenter?.Location || '未知地點';
+                const time = eq.EarthquakeInfo?.OriginTime || '未知時間';
+                const depth = eq.EarthquakeInfo?.FocalDepth || '未知';
+                const lat = eq.EarthquakeInfo?.Epicenter?.EpicenterLatitude || '--';
+                const lon = eq.EarthquakeInfo?.Epicenter?.EpicenterLongitude || '--';
+                const reportImage = eq.ReportImageURI || '';
+                const shakemapImage = eq.ShakemapImageURI || '';
+                const eqId = `detail-${index}`;
+
+                let magClass = '';
+                if (magnitude >= 6) magClass = 'high';
+                else if (magnitude >= 5) magClass = 'medium';
+
+                let imagesHtml = '';
+                if (reportImage || shakemapImage) {
+                    imagesHtml = `
+                        <button class="eq-toggle-btn" id="eq-btn-${eqId}" onclick="toggleEarthquakeImages('${eqId}')">📷 查看震央圖</button>
+                        <div class="eq-images" id="eq-images-${eqId}">`;
+                    if (reportImage) {
+                        imagesHtml += `
+                            <div class="eq-image-container" onclick="window.open('${reportImage}', '_blank')">
+                                <img src="${reportImage}" alt="地震報告圖" class="eq-image">
+                                <div class="eq-image-label">📊 地震報告圖</div>
+                            </div>
+                        `;
+                    }
+                    if (shakemapImage) {
+                        imagesHtml += `
+                            <div class="eq-image-container" onclick="window.open('${shakemapImage}', '_blank')">
+                                <img src="${shakemapImage}" alt="震度分布圖" class="eq-image">
+                                <div class="eq-image-label">🗺️ 震度分布圖</div>
+                            </div>
+                        `;
+                    }
+                    imagesHtml += '</div>';
+                }
+
+                html += `
+                    <div class="earthquake-card">
+                        <div class="eq-header">
+                            <div class="eq-magnitude ${magClass}">規模 ${magnitude.toFixed(1)}</div>
+                            <div class="eq-time">🕐 ${time}</div>
+                        </div>
+                        <div class="eq-location">📍 ${location}</div>
+                        <div class="eq-details">
+                            <div>震源深度: ${depth} 公里</div>
+                            <div>緯度: ${lat}</div>
+                            <div>經度: ${lon}</div>
+                        </div>
+                        ${imagesHtml}
+                    </div>
+                `;
+            });
+            html += '</div>';
+            return html;
+        }
+         
+         async function fetchCityNews(city) {
+    const box = document.getElementById("newsContent");
+    try {
+        const res = await fetch(`city_news.php?city=${city}`);
+        const data = await res.json();
+        if (data.status === "ok") {
+            if (!data.news.length) {
+                box.innerHTML = "📭 目前沒有最新消息";
+                return;
+            }
+            const html = data.news.map(n =>
+                `<div>⏰ ${n.time}｜<a href="${n.link}" target="_blank">${n.title}</a></div>`
+            ).join("");
+            box.innerHTML = html;
+        } else {
+            box.innerHTML = "❌ 讀取失敗";
+        }
+    } catch (err) {
+        box.innerHTML = "無最新消息";
+    }
+}
+
+
+        function displayWeatherAndEarthquake(location) {
+            const els = location.WeatherElement;
+            const temp = els.find(e => e.ElementName === '溫度');
+            const weather = els.find(e => e.ElementName === '天氣現象');
+            const pop = els.find(e => e.ElementName === '3小時降雨機率');
+            const humidity = els.find(e => e.ElementName === '相對濕度');
+            const wind = els.find(e => e.ElementName === '風速');
+
+            const timeSlots = temp?.Time || [];
+            const dayMap = new Map();
+            
+            timeSlots.forEach((slot, idx) => {
+                const date = slot.DataTime.split('T')[0];
+                if (!dayMap.has(date)) dayMap.set(date, []);
+                dayMap.get(date).push(idx);
+            });
+
+            const days = Array.from(dayMap.entries()).slice(0, 3);
+
+            let tabsHtml = '<div class="day-selector">';
+            let contentsHtml = '';
+
+            days.forEach(([date, indices], dayIdx) => {
+                const isActive = dayIdx === 0 ? 'active' : '';
+                
+                tabsHtml += `<button class="day-btn ${isActive}" onclick="switchDay(${dayIdx})">${getDayLabel(dayIdx)}<br><small>${formatDate(date)}</small></button>`;
+                
+                contentsHtml += `<div class="day-content ${isActive}"><div class="weather-cards">`;
+                
+                // 分成早中晚三個時段
+                const periods = [
+                    { label: '早晨', time: '06:00~12:00', idx: indices[0] || 0 },
+                    { label: '下午', time: '12:00~18:00', idx: indices[Math.floor(indices.length / 2)] || 0 },
+                    { label: '晚上', time: '18:00~24:00', idx: indices[indices.length - 1] || 0 }
+                ];
+
+                periods.forEach(period => {
+                    const idx = period.idx;
+                    const weatherDesc = getVal(weather, idx, 'Weather');
+                    const emoji = getWeatherEmoji(weatherDesc);
+                    
+                    contentsHtml += `
+                        <div class="weather-card">
+                            <div class="period-header">
+                                <div class="period-title">${period.label}</div>
+                                <div class="period-time">${period.time}</div>
+                            </div>
+                            <div class="weather-icon-section">
+                                <div class="weather-icon">${emoji}</div>
+                                <div class="weather-desc">${weatherDesc}</div>
+                            </div>
+                            <div class="temp-section">
+                                <div class="temperature">${getVal(temp, idx, 'Temperature')}°C</div>
+                                <div class="temp-label">溫度</div>
+                            </div>
+                            <div class="weather-details">
+                                <div class="detail-item">
+                                    <span class="detail-icon">💧</span>
+                                    <span class="detail-value">${getVal(pop, idx, 'ProbabilityOfPrecipitation')}%</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-icon">💦</span>
+                                    <span class="detail-value">${getVal(humidity, idx, 'RelativeHumidity')}%</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-icon">🌬️</span>
+                                    <span class="detail-value">${getVal(wind, idx, 'WindSpeed')} m/s</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                contentsHtml += '</div></div>';
+            });
+
+            tabsHtml += '</div>';
+            const earthquakeSection = displayEarthquakeSection(location.LocationName);
+
+            weatherSection.innerHTML = `
+                <button class="back-button" onclick="backToSearch()">← 返回搜尋</button>
+                <div class="location-header">${getCityIcon(location.LocationName)} ${location.LocationName}</div>
+
+
+                <div class="city-news">
+        <h3>📰 最新消息</h3>
+        <div id="newsContent">載入中...</div>
+    </div>
+
+
+                ${tabsHtml}
+                ${contentsHtml}
+                ${earthquakeSection}
+            `;
+
+fetchCityNews(location.LocationName);
+
+            weatherSection.classList.add('show');
+            setTimeout(() => weatherSection.scrollIntoView({ behavior: 'smooth' }), 100);
+        }
+
+        function backToSearch() {
+            weatherSection.classList.remove('show');
+            searchInput.value = '';
+            searchInput.focus();
+            document.querySelector('.home-content').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleEarthquakeImages(eqId) {
+            const imagesDiv = document.getElementById(`eq-images-${eqId}`);
+            const btn = document.getElementById(`eq-btn-${eqId}`);
+            if (imagesDiv.classList.contains('show')) {
+                imagesDiv.classList.remove('show');
+                btn.textContent = '📷 查看震央圖';
+            } else {
+                imagesDiv.classList.add('show');
+                btn.textContent = '🔼 收起圖片';
+            }
+        }
+
+        function toggleHomeEarthquakeImage(eqId) {
+            const imageDiv = document.getElementById(`home-eq-img-${eqId}`);
+            const btn = document.getElementById(`home-eq-btn-${eqId}`);
+            if (imageDiv.classList.contains('show')) {
+                imageDiv.classList.remove('show');
+                btn.textContent = '📷 查看震央圖';
+            } else {
+                imageDiv.classList.add('show');
+                btn.textContent = '🔼 收起圖片';
+            }
+        }
+
+        function getCityIcon(cityName) {
+            const icons = {
+                '臺北市': '🏛️',
+                '新北市': '🌉',
+                '桃園市': '✈️',
+                '臺中市': '🌸',
+                '臺南市': '🏰',
+                '高雄市': '⚓',
+                '基隆市': '🚢',
+                '新竹市': '💻',
+                '新竹縣': '🎋',
+                '苗栗縣': '🌾',
+                '彰化縣': '🦅',
+                '南投縣': '⛰️',
+                '雲林縣': '☕',
+                '嘉義市': '🌳',
+                '嘉義縣': '🌄',
+                '屏東縣': '🌴',
+                '宜蘭縣': '🌊',
+                '花蓮縣': '🏞️',
+                '臺東縣': '🎈',
+                '澎湖縣': '🏖️',
+                '金門縣': '🦁',
+                '連江縣': '🏝️'
+            };
+            return icons[cityName] || '📍';
+        }
+
+        function displayHomePage() {
+            // 顯示熱門城市 - 六都
+            const popularCities = [
+                '臺北市', '新北市', '桃園市', '臺中市', '臺南市', '高雄市'
+            ];
+
+            const cityGrid = document.getElementById('cityGrid');
+            cityGrid.innerHTML = '';
+            
+            popularCities.forEach(cityName => {
+                const location = allLocations.find(loc => loc.LocationName === cityName);
+                if (location) {
+                    const card = document.createElement('div');
+                    card.className = 'city-card';
+                    card.innerHTML = `
+                        <span class="city-emoji">${getCityIcon(cityName)}</span>
+                        ${cityName}
+                    `;
+                    card.onclick = () => {
+                        document.querySelector('.home-content').style.display = 'none';
+                        selectLocation(location);
+                    };
+                    cityGrid.appendChild(card);
+                }
+            });
+
+            // 顯示最近地震
+            if (earthquakeData && earthquakeData.records && earthquakeData.records.Earthquake) {
+                const earthquakes = earthquakeData.records.Earthquake.slice(0, 5);
+                const eqList = document.getElementById('homeEarthquakeList');
+                eqList.innerHTML = '';
+
+                earthquakes.forEach((eq, index) => {
+                    const magnitude = parseFloat(eq.EarthquakeInfo?.EarthquakeMagnitude?.MagnitudeValue || 0);
+                    const location = eq.EarthquakeInfo?.Epicenter?.Location || '未知地點';
+                    const time = eq.EarthquakeInfo?.OriginTime || '未知時間';
+                    const depth = eq.EarthquakeInfo?.FocalDepth || '未知';
+                    const reportImage = eq.ReportImageURI || '';
+                    const eqId = `home-${index}`;
+
+                    let magClass = '';
+                    if (magnitude >= 6) magClass = 'high';
+                    else if (magnitude >= 5) magClass = 'medium';
+
+                    let imageHtml = '';
+                    if (reportImage) {
+                        imageHtml = `
+                            <button class="home-eq-toggle-btn" id="home-eq-btn-${eqId}" onclick="toggleHomeEarthquakeImage('${eqId}')">📷 查看震央圖</button>
+                            <div class="home-eq-image" id="home-eq-img-${eqId}">
+                                <img src="${reportImage}" alt="地震報告圖" onclick="window.open('${reportImage}', '_blank')" style="cursor: pointer;">
+                            </div>
+                        `;
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = 'home-eq-card';
+                    card.innerHTML = `
+                        <div class="home-eq-header">
+                            <div class="home-eq-mag ${magClass}">規模 ${magnitude.toFixed(1)}</div>
+                            <div class="home-eq-time">🕐 ${time}</div>
+                        </div>
+                        <div class="home-eq-location">📍 ${location}</div>
+                        <div class="home-eq-details">
+                            <div>震源深度: ${depth} 公里</div>
+                        </div>
+                        ${imageHtml}
+                    `;
+                    eqList.appendChild(card);
+                });
+            }
+        }
+
+        fetchAllData();
+    </script>
+</body>
+</html>
